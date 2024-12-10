@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, FlatList, Text, StyleSheet, Image, SafeAreaView, Platform } from 'react-native';
 import axios from 'axios';
+import { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET } from '@env'; //I used this to hide client id and client secret.
+//also used .env and .gitignore before to hide your client id and client secret before you push it!
 
 // Spotify API credentials
-const CLIENT_ID = 'SPOTIFY_CLIENT_ID';
-const CLIENT_SECRET = 'SPOTIFY_CLIENT_SECRET';
+const CLIENT_ID = SPOTIFY_CLIENT_ID;
+const CLIENT_SECRET = SPOTIFY_CLIENT_SECRET;
 
 const SearchScreen = () => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [accessToken, setAccessToken] = useState('');
 
-  // Fetch Spotify Access Token
+  // This code is pasted from Spotify Dashboard. Fol 
   const fetchAccessToken = async () => {
     try {
       const response = await axios.post('https://accounts.spotify.com/api/token', null, {
@@ -19,17 +21,15 @@ const SearchScreen = () => {
           'Content-Type': 'application/x-www-form-urlencoded',
           Authorization: `Basic ${btoa(`${CLIENT_ID}:${CLIENT_SECRET}`)}`,
         },
-        params: {
-          grant_type: 'client_credentials',
-        },
+        params: { grant_type: 'client_credentials' },
       });
-      setAccessToken(response.data.access_token);
+      setAccessToken(response.data.access_token); 
     } catch (error) {
-      console.error('Error fetching access token:', error);
+      console.error('Error fetching access token:', error.message);
     }
   };
 
-  // Fetch Search Results
+  // fetching all results we could find
   const fetchSearchResults = async () => {
     if (!accessToken || !query) return;
 
@@ -43,25 +43,20 @@ const SearchScreen = () => {
           type: 'album,artist,playlist',
           limit: 10,
         },
-      });
-
-      // Combine and filter valid results
+      }); 
+      //will return either found data or just empty array (no info to show)     
       const albums = response.data.albums?.items || [];
       const artists = response.data.artists?.items || [];
       const playlists = response.data.playlists?.items || [];
 
-      setResults([
-        ...albums,
-        ...artists,
-        ...playlists,
-      ].filter(item => item && item.id)); // Exclude null items and items without an id
+      setResults([...albums, ...artists, ...playlists].filter((item) => item && item.id)); 
     } catch (error) {
-      console.error('Error fetching search results:', error);
+      console.error('Error fetching search results:', error.message);
     }
   };
 
   // Fetch access token on mount
-  React.useEffect(() => {
+  useEffect(() => {
     fetchAccessToken();
   }, []);
 
@@ -73,12 +68,13 @@ const SearchScreen = () => {
         placeholderTextColor="#b3b3b3"
         value={query}
         onChangeText={(text) => setQuery(text)}
-        onSubmitEditing={fetchSearchResults} // Trigger search when user presses Enter
+        onSubmitEditing={fetchSearchResults} 
       />
 
+      {/* Search Results */}
       <FlatList
         data={results}
-        keyExtractor={(item) => item.id} // Use valid id only (filter ensures no null items)
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.resultItem}>
             {item.images && item.images[0]?.url && (
@@ -99,7 +95,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 50 : 16, // Adjust padding for Dynamic Island on iOS
+    paddingTop: Platform.OS === 'ios' ? 50 : 16,
   },
   searchBar: {
     height: 50,
